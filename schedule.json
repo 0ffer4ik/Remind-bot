@@ -2,7 +2,7 @@
  "_help": "settings.week_anchor — понедельник недели-ЧИСЛИТЕЛЯ (Ч). language_group — твоя подгруппа по языку, например 'англ. 3', 'нем.', 'перевод. 1' (null = не выбрана). tags — какие необязательные предметы показывать: 'переводчики', 'web', 'рус'.",
  "settings": {
   "week_anchor": "2026-08-31",
-  "language_group": null,
+  "language_group": "англ. 6",
   "tags": []
  },
  "lessons": [
