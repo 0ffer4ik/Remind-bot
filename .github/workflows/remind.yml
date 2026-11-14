@@ -1,0 +1,22 @@
+name: Утреннее напоминание
+
+on:
+  schedule:
+    # Время в UTC, Саратов = UTC+4. Бот сам проверяет, что до первой пары ~1,5 часа.
+    - cron: "50 2 * * 1,2"    # Пн, Вт: 06:50
+    - cron: "30 4 * * 2,4,5"  # Вт, Чт, Пт: 08:30
+    - cron: "35 6 * * 3,6"    # Ср, Сб: 10:35
+  workflow_dispatch:           # ручной запуск (шлёт всегда)
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python bot.py
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
