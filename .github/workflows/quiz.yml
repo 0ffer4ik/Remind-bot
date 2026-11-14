@@ -1,0 +1,19 @@
+name: Квиз по матану
+
+on:
+  schedule:
+    - cron: "5 14 * * *"   # 18:05 по Саратову (UTC+4)
+  workflow_dispatch:        # ручной запуск
+
+jobs:
+  quiz:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python quiz.py
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
