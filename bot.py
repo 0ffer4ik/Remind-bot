@@ -2,6 +2,7 @@ import json
 import os
 import urllib.parse
 import urllib.request
+import urllib.error
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
