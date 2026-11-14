@@ -38,7 +38,11 @@ def build_message(data, today):
 def send(text):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     body = urllib.parse.urlencode({"chat_id": CHAT_ID, "text": text}).encode()
-    urllib.request.urlopen(urllib.request.Request(url, data=body), timeout=30)
+    try:
+        urllib.request.urlopen(urllib.request.Request(url, data=body), timeout=30)
+    except urllib.error.HTTPError as e:
+        print("Ответ Телеграма:", e.read().decode())
+        raise
 
 
 def main():
