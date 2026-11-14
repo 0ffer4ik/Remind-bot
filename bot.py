@@ -14,6 +14,54 @@ WINDOW_MINUTES = 50    # допуск на опоздание/раннее ср�
 DAYS = ["понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"]
 
 
+LAT, LON = 51.53, 46.03  # Саратов
+WEATHER_URL = (
+    "https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}"
+    "&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max"
+    "&timezone=Europe%2FSaratov&forecast_days=3"
+)
+
+
+def weather_text(code):
+    if code == 0:
+        return "☀️ ясно"
+    if code in (1, 2, 3):
+        return "⛅ облачно"
+    if code in (45, 48):
+        return "🌫 туман"
+    if code in (51, 53, 55, 56, 57):
+        return "🌦 морось"
+    if code in (61, 63, 65, 66, 67, 80, 81, 82):
+        return "🌧 дождь"
+    if code in (71, 73, 75, 77, 85, 86):
+        return "❄️ снег"
+    if code in (95, 96, 99):
+        return "⛈ гроза"
+    return "🌡 погода"
+
+
+def parse_weather(data, day):
+    """Строка про погоду на день или None."""
+    d = data["daily"]
+    i = d["time"].index(day.isoformat())
+    lo, hi = round(d["temperature_2m_min"][i]), round(d["temperature_2m_max"][i])
+    rain = d["precipitation_probability_max"][i] or 0
+    line = f"{weather_text(d['weathercode'][i])}, {lo:+d}…{hi:+d}°C, осадки {rain}%"
+    if rain >= 50:
+        line += " — возьми зонт"
+    return line
+
+
+def fetch_weather(day):
+    try:
+        url = WEATHER_URL.format(lat=LAT, lon=LON)
+        with urllib.request.urlopen(url, timeout=15) as r:
+            return parse_weather(json.load(r), day)
+    except Exception as e:  # погода не должна ломать напоминание
+        print("Погода недоступна:", e)
+        return None
+
+
 def load(path, default):
     try:
         with open(path, encoding="utf-8") as f:
@@ -62,20 +110,23 @@ def lessons_for(sched, today):
     return result, wt
 
 
-def build_message(sched, reminders, today):
+def build_message(sched, reminders, today, evening=False, weather=None):
     lessons, wt = lessons_for(sched, today)
     lines = []
     if lessons:
-        lines.append(f"⏰ Первая пара в {lessons[0]['start']}.")
+        icon = "🌙 Завтра первая пара" if evening else "⏰ Первая пара"
+        lines.append(f"{icon} в {lessons[0]['start']}.")
     wt_name = "числитель" if wt == "Ч" else "знаменатель"
     lines.append(f"{DAYS[today.weekday()].capitalize()}, {today.strftime('%d.%m')} · неделя: {wt_name}")
+    if weather:
+        lines.append(weather)
     if lessons:
         lines.append("")
         for l in lessons:
             extra = ", ".join(x for x in (l["room"], l["teacher"]) if x)
             lines.append(f"{l['start']}–{l['end']} {l['name']}" + (f" ({extra})" if extra else ""))
     else:
-        lines.append("\nПар сегодня нет.")
+        lines.append("\nПар нет.")
 
     soon = []
     for d in reminders.get("deadlines", []):
@@ -114,9 +165,23 @@ def main():
     sched = load("schedule.json", None)
     reminders = load("reminders.json", {})
     now = datetime.now(TZ)
-    message, lessons = build_message(sched, reminders, now.date())
-    manual = os.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch"
-    if not should_send(lessons, now, manual):
+    event = os.environ.get("GITHUB_EVENT_NAME")
+    manual = event == "workflow_dispatch"
+    mode = (os.environ.get("MODE") or "").strip()
+    if mode not in ("morning", "evening"):
+        mode = "evening" if now.hour >= 18 else "morning"
+    evening = mode == "evening"
+
+    day = now.date() + timedelta(days=1) if evening else now.date()
+    weather = fetch_weather(day)
+    message, lessons = build_message(sched, reminders, day, evening, weather)
+
+    if evening:
+        ok = manual or bool(lessons)  # вечером молчим, если завтра нет пар
+    else:
+        ok = should_send(lessons, now, manual)
+
+    if not ok:
         print("Сейчас не время напоминать:", now.strftime("%H:%M"))
     elif not TOKEN or not CHAT_ID:
         print("Токен не задан, показываю текст:\n" + message)

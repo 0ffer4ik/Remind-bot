@@ -2,11 +2,20 @@ name: Утреннее напоминание
 
 on:
   schedule:
-    # Время в UTC, Саратов = UTC+4. Бот сам проверяет, что до первой пары ~1,5 часа.
+    # Время в UTC, Саратов = UTC+4. Утром бот сам проверяет, что до первой пары ~1,5 часа.
     - cron: "50 2 * * 1,2"    # Пн, Вт: 06:50
     - cron: "30 4 * * 2,4,5"  # Вт, Чт, Пт: 08:30
     - cron: "35 6 * * 3,6"    # Ср, Сб: 10:35
+    - cron: "5 17 * * *"      # каждый вечер 21:05: что завтра
   workflow_dispatch:           # ручной запуск (шлёт всегда)
+    inputs:
+      mode:
+        description: "Что прислать"
+        type: choice
+        default: morning
+        options:
+          - morning
+          - evening
 
 jobs:
   remind:
@@ -20,3 +29,4 @@ jobs:
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
+          MODE: ${{ github.event.inputs.mode }}
