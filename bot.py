@@ -5,8 +5,8 @@ import urllib.request
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
-TOKEN = os.environ.get("9119990409:AAGy73lyCXc85OXXnnjz-HttmDUSHNRJYhY")
-CHAT_ID = os.environ.get("1129650289")
+TOKEN = os.environ.get("BOT_TOKEN")
+CHAT_ID = os.environ.get("CHAT_ID")
 DAYS = ["понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"]
 
 
