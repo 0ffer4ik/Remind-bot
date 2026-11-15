@@ -2,7 +2,7 @@ name: Расписание картинкой
 
 on:
   schedule:
-    - cron: "0 15 * * 0"    # Вс 19:00 Саратов (UTC+4)
+    - cron: "0 15 * * 0"    # Вс 19:00 по Саратову
   workflow_dispatch:
 
 jobs:
