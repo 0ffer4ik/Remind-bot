@@ -2,12 +2,20 @@ import os
 import urllib.parse
 import urllib.request
 from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
+# Импортируем только то, что точно есть в ваших файлах
 from bot import load, TZ
-from weekly import render, send_photo, week_monday
+from weekly import render, send_photo
 
 TOKEN = os.environ.get("BOT_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
+
+def get_monday(now):
+    """Вычисляет понедельник текущей недели (или следующей, если сегодня Вс)."""
+    if now.weekday() == 6:  # Если воскресенье
+        return now.date() + timedelta(days=1)
+    return now.date() - timedelta(days=now.weekday())
 
 def build_digest_text(reminders, monday):
     next_sunday = monday + timedelta(days=6)
@@ -35,7 +43,9 @@ def main():
     sched = load("schedule.json", None)
     reminders = load("reminders.json", {})
     now = datetime.now(TZ)
-    monday = week_monday(now)
+    
+    # Используем локальную функцию вместо импорта из weekly
+    monday = get_monday(now) 
     
     # 1. Отправляем картинку с расписанием
     png, wt_label = render(sched, monday)
