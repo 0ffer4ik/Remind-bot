@@ -1,0 +1,20 @@
+name: Расписание картинкой
+
+on:
+  schedule:
+    - cron: "0 15 * * 0"    # Вс 19:00 Саратов (UTC+4)
+  workflow_dispatch:
+
+jobs:
+  weekly:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install Pillow requests
+      - run: python weekly.py
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
