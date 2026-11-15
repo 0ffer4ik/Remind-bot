@@ -2,8 +2,11 @@ name: Квиз по матану
 
 on:
   schedule:
-    - cron: "5 14 * * *"   # 18:05 по Саратову (UTC+4)
-  workflow_dispatch:        # ручной запуск
+    - cron: "5 14 * * 1-6"   # Пн-Сб в 18:05
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   quiz:
@@ -17,3 +20,10 @@ jobs:
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
+      - name: Save state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add quiz_state.json
+          git diff --staged --quiet || git commit -m "Update quiz state"
+          git push

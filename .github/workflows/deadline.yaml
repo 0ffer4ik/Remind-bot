@@ -1,0 +1,19 @@
+name: Напоминание о дедлайне
+
+on:
+  schedule:
+    - cron: "0 8 * * *"    # Каждый день в 12:00 по Саратову
+  workflow_dispatch:
+
+jobs:
+  deadline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python deadline.py
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}

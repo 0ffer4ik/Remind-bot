@@ -8,16 +8,32 @@ from zoneinfo import ZoneInfo
 
 TOKEN = os.environ.get("BOT_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
-PER_DAY = 3  # сколько вопросов за один раз
+PER_DAY = 3
 
+def load_json(path, default):
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return default
 
-def pick(questions, today):
-    """Каждый день новые вопросы по кругу, пока не закончится список."""
-    start = (today.toordinal() * PER_DAY) % len(questions)
-    return [questions[(start + i) % len(questions)] for i in range(PER_DAY)]
+def save_json(path, data):
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
+def pick(questions, state):
+    idx = state.get("idx", -1) + 1
+    picked = []
+    for i in range(PER_DAY):
+        q_idx = (idx + i) % len(questions)
+        picked.append(questions[q_idx])
+    state["idx"] = (idx + PER_DAY - 1) % len(questions)
+    return picked, state
 
 def send_poll(q):
+    if not TOKEN or not CHAT_ID:
+        print("Токен не задан, вопрос:", q["q"])
+        return
     url = f"https://api.telegram.org/bot{TOKEN}/sendPoll"
     body = urllib.parse.urlencode({
         "chat_id": CHAT_ID,
@@ -34,18 +50,19 @@ def send_poll(q):
         print("Ответ Телеграма:", e.read().decode())
         raise
 
-
 def main():
-    with open("quiz.json", encoding="utf-8") as f:
-        questions = json.load(f)
-    today = datetime.now(ZoneInfo("Europe/Saratov")).date()
-    for q in pick(questions, today):
-        if TOKEN and CHAT_ID:
-            send_poll(q)
-        else:
-            print("Токена нет, вопрос:", q["q"])
-    print("Готово")
-
+    questions = load_json("quiz.json", [])
+    if not questions:
+        print("Нет вопросов")
+        return
+    state = load_json("quiz_state.json", {"idx": -1})
+    
+    picked, new_state = pick(questions, state)
+    for q in picked:
+        send_poll(q)
+    
+    save_json("quiz_state.json", new_state)
+    print(f"Отправлено {len(picked)} вопросов, новый idx: {new_state['idx']}")
 
 if __name__ == "__main__":
     main()

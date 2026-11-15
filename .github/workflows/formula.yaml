@@ -1,0 +1,19 @@
+name: Формула дня
+
+on:
+  schedule:
+    - cron: "0 5 * * *"    # Каждый день в 09:00 по Саратову
+  workflow_dispatch:
+
+jobs:
+  formula:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python formula.py
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
